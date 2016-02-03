@@ -1,0 +1,138 @@
+<html>
+<head>
+  <title>MSG Reader - Example</title>
+  <style type="text/css">
+    .info-box {
+      color: #F5F5F5;
+      padding: 2em;
+    }
+
+    .error-msg {
+      background-color: #D80A0A;
+    }
+
+    .wizard-msg {
+      background-color: #673AB7;
+    }
+
+    .field-block {
+      padding: 1em 2em;
+    }
+
+    .field-block .field-label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="msg-example">
+  <div class="info-box wizard-msg">
+    1. Choose *.msg file...
+  </div>
+  <div class="field-block">
+    <input type="file" class="src-file"/>
+  </div>
+
+  <div class="msg-info" style="display: none;">
+    <div class="info-box wizard-msg">
+      2. MSG info (<span class="msg-file-name"></span>)
+    </div>
+    <div class="field-block">
+      <div class="field-label">From</div>
+      <div class="msg-from"></div>
+    </div>
+    <div class="field-block">
+      <div class="field-label">To</div>
+      <div class="msg-to"></div>
+    </div>
+    <div class="field-block">
+      <div class="field-label">Subject</div>
+      <div class="msg-subject"></div>
+    </div>
+    <div class="field-block">
+      <div class="field-label">Body</div>
+      <div class="msg-body"></div>
+    </div>
+    <div class="field-block">
+      <div class="field-label">Attachments</div>
+      <div class="msg-attachment"></div>
+    </div>
+  </div>
+</div>
+
+<div class="incorrect-type info-box error-msg" style="display: none;">
+  Sorry, the file you selected is not MSG type
+</div>
+
+<div class="file-api-not-available info-box error-msg" style="display: none;">
+  Sorry, your browser isn't supported
+</div>
+<script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="../DataStream.js"></script>
+<script src="../msg.reader.js"></script>
+<script>
+  function isSupportedFileAPI() {
+    return window.File && window.FileReader && window.FileList && window.Blob;
+  }
+
+  function formatEmail(data) {
+    return data.name ? data.name + " [" + data.email + "]" : data.email;
+  }
+
+  $(function () {
+    if (isSupportedFileAPI()) {
+      $('.src-file').change(function () {
+        var selectedFile = this.files[0];
+        if (!selectedFile) {
+          $('.msg-info, .incorrect-type').hide();
+          return;
+        }
+        if (selectedFile.name.indexOf('.msg') == -1) {
+          $('.msg-info').hide();
+          $('.incorrect-type').show();
+          return;
+        }
+        $('.msg-example .msg-file-name').html(selectedFile.name);
+        $('.incorrect-type').hide();
+
+        // read file...
+        var fileReader = new FileReader();
+        fileReader.onload = function (evt) {
+
+          var buffer = evt.target.result;
+          var msgReader = new MSGReader(buffer);
+          var fileData = msgReader.getFileData();
+          if (!fileData.error) {
+            $('.msg-example .msg-from').html(formatEmail({name: fileData.senderName, email: fileData.senderEmail}));
+
+            $('.msg-example .msg-to').html(jQuery.map(fileData.recipients, function (recipient, i) {
+              return formatEmail(recipient);
+            }).join('<br/>'));
+            $('.msg-example .msg-subject').html(fileData.subject);
+            $('.msg-example .msg-body').html(
+                fileData.body ? fileData.body.substring(0, Math.min(500, fileData.body.length))
+                + (fileData.body.length > 500 ? '...' : '') : '');
+            $('.msg-example .msg-attachment').html(jQuery.map(fileData.attachments, function (attachment, i) {
+              return attachment.fileName + ' [' + attachment.contentLength + 'bytes]' +
+                  (attachment.pidContentId ? '; ID = ' + attachment.pidContentId : '');
+            }).join('<br/>'));
+            $('.msg-info').show();
+
+            // Use msgReader.getAttachment to access attachment content ...
+            // msgReader.getAttachment(0) or msgReader.getAttachment(fileData.attachments[0])
+          } else {
+            $('.msg-info').hide();
+            $('.incorrect-type').show();
+          }
+        };
+        fileReader.readAsArrayBuffer(selectedFile);
+      });
+    } else {
+      $('.msg-example').hide();
+      $('.file-api-not-available').show();
+    }
+  });
+</script>
+</body>
+</html>
