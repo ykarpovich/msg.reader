@@ -1,6 +1,6 @@
 # MSG Reader
 
-MSG Reader is a Outlook Item File (.msg) reader that is built with HTML5. 
+MSG Reader is an Outlook Item File (.msg) reader that is built with HTML5. 
 
 Allows to parse and extract necessary information (attachment included) from .msg file. 
 
