@@ -47,6 +47,10 @@
       <div class="msg-to"></div>
     </div>
     <div class="field-block">
+      <div class="field-label">Date (from Headers, example)</div>
+      <div class="msg-date"></div>
+    </div>
+    <div class="field-block">
       <div class="field-label">Subject</div>
       <div class="msg-subject"></div>
     </div>
@@ -80,6 +84,28 @@
     return data.name ? data.name + " [" + data.email + "]" : data.email;
   }
 
+  function parseHeaders(headers) {
+    var parsedHeaders = {};
+    if (!headers) {
+      return parsedHeaders;
+    }
+    var headerRegEx = /(.*)\: (.*)/g;
+    while (m = headerRegEx.exec(headers)) {
+      // todo: Pay attention! Header can be presented many times (e.g. Received). Handle it, if needed!
+      parsedHeaders[m[1]] = m[2];
+    }
+    return parsedHeaders;
+  }
+
+  function getMsgDate(rawHeaders) {
+    // Example for the Date header
+    var headers = parseHeaders(rawHeaders);
+    if (!headers['Date']){
+      return '-';
+    }
+    return new Date(headers['Date']);
+  }
+
   $(function () {
     if (isSupportedFileAPI()) {
       $('.src-file').change(function () {
@@ -109,6 +135,7 @@
             $('.msg-example .msg-to').html(jQuery.map(fileData.recipients, function (recipient, i) {
               return formatEmail(recipient);
             }).join('<br/>'));
+            $('.msg-example .msg-date').html(getMsgDate(fileData.headers));
             $('.msg-example .msg-subject').html(fileData.subject);
             $('.msg-example .msg-body').html(
                 fileData.body ? fileData.body.substring(0, Math.min(500, fileData.body.length))
