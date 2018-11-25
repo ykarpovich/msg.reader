@@ -7,4 +7,4 @@ Allows to parse and extract necessary information (attachment included) from .ms
 
 ### Online demo
 
-+ http://ykarpovich.github.io/msg.reader/examples/example.html
++ https://ykarpovich.github.io/msg.reader/examples/example.html
