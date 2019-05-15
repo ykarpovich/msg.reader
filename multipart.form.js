@@ -29,98 +29,109 @@
  * mf.send({someData: 'Test data'}, [attachment]);
  */
 
-(function () {
+var CRLF = "\r\n";
 
-  var CRLF = "\r\n";
+function toBinary(value) {
+  var nBytes = value.length;
+  var ui8Data = new Uint8Array(nBytes);
+  for (var nIdx = 0; nIdx < nBytes; nIdx++) {
+    ui8Data[nIdx] = value.charCodeAt(nIdx) & 0xff;
+  }
+  return ui8Data;
+}
 
-  function toBinary(value) {
-    var nBytes = value.length;
-    var ui8Data = new Uint8Array(nBytes);
-    for (var nIdx = 0; nIdx < nBytes; nIdx++) {
-      ui8Data[nIdx] = value.charCodeAt(nIdx) & 0xff;
+function createBoundary() {
+  return "--XHR----------------------" + (new Date()).getTime();
+}
+
+function createFieldsData(boundary, fieldsData) {
+  var data = '';
+  for (var fieldName in fieldsData) {
+    if (!fieldsData.hasOwnProperty(fieldName)) {
+      continue;
     }
-    return ui8Data;
+    data += '--' + boundary + CRLF +
+      'Content-Disposition: form-data; name="' + fieldName + '"' + CRLF + CRLF + fieldsData[fieldName] + CRLF;
   }
+  return data;
+}
 
-  function createBoundary() {
-    return "--XHR----------------------" + (new Date()).getTime();
+function createFileHeader(boundary, fileName) {
+  return '--' + boundary + CRLF +
+    'Content-Disposition: form-data; name="file"; filename="' + encodeURIComponent(fileName) + '"' + CRLF +
+    'Content-Type: application/octet-stream' + CRLF + CRLF
+}
+
+function createBinaryData(boundary, fieldsData, attachData) {
+  var binaryData = [];
+
+  binaryData.push(toBinary(createFieldsData(boundary, fieldsData)));
+  for (var ai = 0; ai < attachData.length; ai++) {
+    binaryData.push(toBinary(createFileHeader(boundary, attachData[ai].fileName)));
+    binaryData.push(attachData[ai].content);
+    binaryData.push(toBinary(CRLF));
   }
+  binaryData.push(toBinary('--' + boundary + '--'));
+  return binaryData;
+}
 
-  function createFieldsData(boundary, fieldsData) {
-    var data = '';
-    for (var fieldName in fieldsData) {
-      if (!fieldsData.hasOwnProperty(fieldName)) {
-        continue;
-      }
-      data += '--' + boundary + CRLF +
-        'Content-Disposition: form-data; name="' + fieldName + '"' + CRLF + CRLF + fieldsData[fieldName] + CRLF;
+function joinBinaryData(binaryData) {
+  var binaryLength = 0, idx = 0, i = 0, bi = 0;
+  for (bi = 0; bi < binaryData.length; bi++) {
+    binaryLength += binaryData[bi].length;
+  }
+  var requestData = new Uint8Array(binaryLength);
+  for (bi = 0; bi < binaryData.length; bi++) {
+    for (i = 0; i < binaryData[bi].length; i++) {
+      requestData[idx++] = binaryData[bi][i];
     }
-    return data;
   }
+  return requestData;
+}
 
-  function createFileHeader(boundary, fileName) {
-    return '--' + boundary + CRLF +
-      'Content-Disposition: form-data; name="file"; filename="' + encodeURIComponent(fileName) + '"' + CRLF +
-      'Content-Type: application/octet-stream' + CRLF + CRLF
-  }
+function createRequestData(boundary, fieldsData, attachData) {
+  var binaryData = createBinaryData(boundary, fieldsData, attachData);
+  var requestData = joinBinaryData(binaryData);
+  binaryData = null;
+  return requestData;
+}
 
-  function createBinaryData(boundary, fieldsData, attachData) {
-    var binaryData = [];
+// MultipartForm
+var MultipartForm = function (uploadUrl, readyStateChangeHandler) {
+  this.uploadUrl = uploadUrl;
+  this.readyStateChangeHandler = readyStateChangeHandler;
+};
 
-    binaryData.push(toBinary(createFieldsData(boundary, fieldsData)));
-    for (var ai = 0; ai < attachData.length; ai++) {
-      binaryData.push(toBinary(createFileHeader(boundary, attachData[ai].fileName)));
-      binaryData.push(attachData[ai].content);
-      binaryData.push(toBinary(CRLF));
+MultipartForm.prototype = {
+  send: function (fieldsData, attachData) {
+    var context = this;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', context.uploadUrl);
+    if (context.readyStateChangeHandler) {
+      xhr.onreadystatechange = function () {
+        context.readyStateChangeHandler(xhr)
+      };
     }
-    binaryData.push(toBinary('--' + boundary + '--'));
-    return binaryData;
+
+    var boundary = createBoundary();
+    xhr.setRequestHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+    xhr.send(createRequestData(boundary, fieldsData, attachData));
   }
+};
 
-  function joinBinaryData(binaryData) {
-    var binaryLength = 0, idx = 0, i = 0, bi = 0;
-    for (bi = 0; bi < binaryData.length; bi++) {
-      binaryLength += binaryData[bi].length;
-    }
-    var requestData = new Uint8Array(binaryLength);
-    for (bi = 0; bi < binaryData.length; bi++) {
-      for (i = 0; i < binaryData[bi].length; i++) {
-        requestData[idx++] = binaryData[bi][i];
-      }
-    }
-    return requestData;
-  }
+// Export MultipartForm for amd environments
+if (typeof define === 'function' && define.amd) {
+  define('MultipartForm', [], function() {
+    return MultipartForm;
+  });
+}
 
-  function createRequestData(boundary, fieldsData, attachData) {
-    var binaryData = createBinaryData(boundary, fieldsData, attachData);
-    var requestData = joinBinaryData(binaryData);
-    binaryData = null;
-    return requestData;
-  }
+// Export MultipartForm for CommonJS
+if (typeof module === 'object' && module && module.exports) {
+  module.exports = MultipartForm;
+}
 
-  // MultipartForm
-  var MultipartForm = function (uploadUrl, readyStateChangeHandler) {
-    this.uploadUrl = uploadUrl;
-    this.readyStateChangeHandler = readyStateChangeHandler;
-  };
-
-  MultipartForm.prototype = {
-    send: function (fieldsData, attachData) {
-      var context = this;
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', context.uploadUrl);
-      if (context.readyStateChangeHandler) {
-        xhr.onreadystatechange = function () {
-          context.readyStateChangeHandler(xhr)
-        };
-      }
-
-      var boundary = createBoundary();
-      xhr.setRequestHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
-
-      xhr.send(createRequestData(boundary, fieldsData, attachData));
-    }
-  };
-
-  window.MultipartForm = MultipartForm;
-})();
+if (window) {
+  window.MultipartForm = MultipartForm
+}

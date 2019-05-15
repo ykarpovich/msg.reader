@@ -1,0 +1,7 @@
+{
+  "name": "msg.reader",
+  "author": {
+    "name": "ykarpovich"
+  },
+  "main": "index.js"
+}
