@@ -1,0 +1,8 @@
+{
+  "name": "msg.reader",
+  "version": "0.2.1",
+  "author": {
+    "name": "ykarpovich"
+  },
+  "main": "index.js"
+}
