@@ -76,6 +76,7 @@
           '0c1a': 'senderName',
           '5d02': 'senderEmail',
           '1000': 'body',
+          '1013': 'bodyHTML',
           '007d': 'headers',
           // attachment specific
           '3703': 'extension',
@@ -395,7 +396,7 @@
       var fieldValue = getFieldValue(ds, msgData, documentProperty, fieldTypeMapped);
 
       if (isAddPropertyValue(fieldName, fieldTypeMapped)) {
-        fields[fieldName] = fieldValue;
+        fields[fieldName] = applyValueConverter(fieldName, fieldTypeMapped, fieldValue);
       }
     }
     if (fieldClass == CONST.MSG.FIELD.CLASS_MAPPING.ATTACHMENT_DATA) {
@@ -404,6 +405,14 @@
       fields['dataId'] = documentProperty.index;
       fields['contentLength'] = documentProperty.sizeBlock;
     }
+  }
+
+  // todo: html body test
+  function applyValueConverter(fieldName, fieldTypeMapped, fieldValue) {
+    if (fieldTypeMapped === 'binary' && fieldName === 'bodyHTML') {
+      return convertUint8ArrayToString(fieldValue);
+    }
+    return fieldValue
   }
 
   function getFieldType(fieldProperty) {
@@ -508,6 +517,10 @@
       value = valueExtractor.extractor(ds, msgData, fieldProperty, dataTypeExtractor);
     }
     return value;
+  }
+
+  function convertUint8ArrayToString(uint8ArraValue) {
+    return new TextDecoder("utf-8").decode(uint8ArraValue);
   }
 
   // MSG Reader
