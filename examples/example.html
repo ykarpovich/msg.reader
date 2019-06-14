@@ -58,6 +58,10 @@
       <div class="field-label">Body</div>
       <div class="msg-body"></div>
     </div>
+    <div class="field-block" style="display: none;">
+      <div class="field-label">HTML Body</div>
+      <div class="msg-body-html"></div>
+    </div>
     <div class="field-block">
       <div class="field-label">Attachments</div>
       <div class="msg-attachment"></div>
@@ -72,7 +76,7 @@
 <div class="file-api-not-available info-box error-msg" style="display: none;">
   Sorry, your browser isn't supported
 </div>
-<script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
 <script src="../DataStream.js"></script>
 <script src="../msg.reader.js"></script>
 <script>
@@ -140,6 +144,11 @@
             $('.msg-example .msg-body').html(
                 fileData.body ? fileData.body.substring(0, Math.min(500, fileData.body.length))
                 + (fileData.body.length > 500 ? '...' : '') : '');
+            if (fileData.bodyHTML) {
+              $('.msg-example .msg-body-html').html(fileData.bodyHTML).closest('div.field-block').show();
+            } else {
+              $('.msg-example .msg-body-html').closest('div.field-block').hide();
+            }
             $('.msg-example .msg-attachment').html(jQuery.map(fileData.attachments, function (attachment, i) {
               var file = msgReader.getAttachment(i);
               var fileUrl = URL.createObjectURL(new File([file.content], attachment.fileName, {type: "application/octet-stream"}));
