@@ -151,7 +151,8 @@
             }
             $('.msg-example .msg-attachment').html(jQuery.map(fileData.attachments, function (attachment, i) {
               var file = msgReader.getAttachment(i);
-              var fileUrl = URL.createObjectURL(new File([file.content], attachment.fileName, {type: "application/octet-stream"}));
+              var fileUrl = URL.createObjectURL(new File([file.content], attachment.fileName,
+                {type: attachment.mimeType ? attachment.mimeType : "application/octet-stream"}));
               return attachment.fileName + ' [' + attachment.contentLength + 'bytes]' +
                   (attachment.pidContentId ? '; ID = ' + attachment.pidContentId : '') +
                   '; <a href="' + fileUrl + '">Download</a>';

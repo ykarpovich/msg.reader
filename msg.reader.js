@@ -83,6 +83,7 @@
           '3704': 'fileNameShort',
           '3707': 'fileName',
           '3712': 'pidContentId',
+          '370e': 'mimeType',
           // recipient specific
           '3001': 'name',
           '39fe': 'email'
