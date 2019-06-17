@@ -1,0 +1,22 @@
+{
+  "name": "msg.reader",
+  "version": "1.0.0",
+  "description": "Outlook Item File (.msg) reader in JavaScript",
+  "main": "msg.reader.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ykarpovich/msg.reader.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ykarpovich/msg.reader/issues"
+  },
+  "homepage": "https://github.com/ykarpovich/msg.reader#readme"
+}
